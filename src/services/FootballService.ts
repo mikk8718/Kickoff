@@ -67,9 +67,10 @@ export class FootballService {
 
   async getLiveMatches(input: {
     timezone: string;
+    league?: LeagueConfig;
     useCache: boolean;
   }): Promise<{ matches: Match[]; usedCache: boolean }> {
-    const cacheKey = `flashscore-live-${input.timezone}`;
+    const cacheKey = `flashscore-live-${input.league?.key ?? "all"}-${input.timezone}`;
     const liveCacheTtlSeconds = 60;
 
     if (input.useCache) {
@@ -85,7 +86,8 @@ export class FootballService {
 
     try {
       const matches = await this.provider.getLiveMatches({
-        timezone: input.timezone
+        timezone: input.timezone,
+        league: input.league
       });
 
       await this.cache.set(cacheKey, matches);

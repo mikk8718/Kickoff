@@ -40,7 +40,7 @@ export const leagues = {
     key: "world-cup",
     displayName: "World Cup",
     country: "world",
-    aliases: ["wc", "world cup", "fifa world cup"],
+    aliases: ["wc", "world cup", "fifa world cup", "world championship", "world championship play offs"],
     flashscoreUrl: "https://www.flashscore.com/football/world/world-cup/fixtures/"
   },
   bundesliga: {

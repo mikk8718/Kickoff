@@ -69,6 +69,7 @@ export class FlashscoreProvider implements FootballProvider {
 
   async getLiveMatches(input: {
     timezone: string;
+    league?: LeagueConfig;
   }) {
     let browser: Browser | undefined;
 
@@ -101,18 +102,36 @@ export class FlashscoreProvider implements FootballProvider {
       }
 
       const rows = await page.$$eval(flashscoreSelectors.matchRow, (elements, selectors) => {
-        return elements.map((row) => ({
-          id: row.getAttribute("id") ?? undefined,
-          time: row.querySelector(selectors.time)?.textContent?.trim(),
-          home: row.querySelector(selectors.homeTeam)?.textContent?.trim(),
-          away: row.querySelector(selectors.awayTeam)?.textContent?.trim(),
-          homeScore: row.querySelector(selectors.homeScore)?.textContent?.trim(),
-          awayScore: row.querySelector(selectors.awayScore)?.textContent?.trim(),
-          status: row.querySelector(selectors.stage)?.textContent?.trim()
-        }));
+        return elements.map((row) => {
+          let sibling = row.previousElementSibling;
+          let competition: string | undefined;
+
+          while (sibling) {
+            if (sibling.className.toString().includes("headerLeague__wrapper")) {
+              competition = sibling.textContent?.trim();
+              break;
+            }
+
+            sibling = sibling.previousElementSibling;
+          }
+
+          return {
+            id: row.getAttribute("id") ?? undefined,
+            time: row.querySelector(selectors.time)?.textContent?.trim(),
+            home: row.querySelector(selectors.homeTeam)?.textContent?.trim(),
+            away: row.querySelector(selectors.awayTeam)?.textContent?.trim(),
+            homeScore: row.querySelector(selectors.homeScore)?.textContent?.trim(),
+            awayScore: row.querySelector(selectors.awayScore)?.textContent?.trim(),
+            competition,
+            status: row.querySelector(selectors.stage)?.textContent?.trim()
+          };
+        });
       }, flashscoreSelectors);
 
-      return parseLiveFlashscoreRows({ rows });
+      return parseLiveFlashscoreRows({
+        rows,
+        league: input.league
+      });
     } finally {
       await browser.close();
     }

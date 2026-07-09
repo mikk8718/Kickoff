@@ -62,4 +62,35 @@ describe("FlashscorePageParser", () => {
       })
     ]);
   });
+
+  it("filters live rows by Flashscore competition heading", () => {
+    expect(parseLiveFlashscoreRows({
+      league: leagues["world-cup"],
+      rows: [
+        {
+          competition: "World Championship - Play OffsWORLD: Draw",
+          status: "56",
+          home: "France",
+          away: "Morocco",
+          homeScore: "0",
+          awayScore: "0"
+        },
+        {
+          competition: "Liga 1PERU",
+          status: "56",
+          home: "Grau",
+          away: "Carlos Mannucci",
+          homeScore: "1",
+          awayScore: "1"
+        }
+      ]
+    })).toEqual([
+      expect.objectContaining({
+        leagueKey: "world-cup",
+        leagueName: "World Cup",
+        homeTeam: "France",
+        awayTeam: "Morocco"
+      })
+    ]);
+  });
 });

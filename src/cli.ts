@@ -103,12 +103,14 @@ program
 program
   .command("live")
   .description("Show live football scores with match minute/status.")
+  .option("-l, --league <league>", "optional league name, key, or alias")
   .option("-t, --timezone <timezone>", "IANA timezone", env.timezone)
   .option("--json", "print JSON output")
   .option("--markdown", "print Markdown output")
   .option("--no-cache", "force a fresh scrape")
   .option("--debug", "print debug logs")
   .action(async (options: {
+    league?: string;
     timezone: string;
     json?: boolean;
     markdown?: boolean;
@@ -122,6 +124,7 @@ program
 
     try {
       const date = todayKey(options.timezone);
+      const league = options.league ? resolveLeague(options.league) : undefined;
       const service = new FootballService({
         provider: new FlashscoreProvider(),
         cache: new FileCache(env.cacheDir),
@@ -130,6 +133,7 @@ program
 
       const result = await service.getLiveMatches({
         timezone: options.timezone,
+        league,
         useCache: options.cache !== false
       });
 
@@ -139,7 +143,7 @@ program
 
       if (options.json) {
         console.log(formatJson({
-          leagueName: "Live Football",
+          leagueName: league?.displayName ?? "Live Football",
           date,
           timezone: options.timezone,
           matches: result.matches
@@ -149,7 +153,7 @@ program
 
       if (options.markdown) {
         console.log(formatMarkdown({
-          leagueName: "Live Football",
+          leagueName: league?.displayName ?? "Live Football",
           date,
           timezone: options.timezone,
           matches: result.matches
@@ -158,7 +162,7 @@ program
       }
 
       console.log(formatConsole({
-        leagueName: "Live Football",
+        leagueName: league?.displayName ?? "Live Football",
         date,
         matches: result.matches
       }));

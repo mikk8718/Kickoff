@@ -9,6 +9,7 @@ const rawFlashscoreRowSchema = z.object({
   away: z.string().optional(),
   homeScore: z.string().optional(),
   awayScore: z.string().optional(),
+  competition: z.string().optional(),
   status: z.string().optional()
 });
 
@@ -43,16 +44,18 @@ export function parseFlashscoreRows(input: {
 
 export function parseLiveFlashscoreRows(input: {
   rows: unknown[];
+  league?: LeagueConfig;
 }): Match[] {
   return input.rows
     .map((row) => rawFlashscoreRowSchema.safeParse(row))
     .filter((result) => result.success)
     .map((result) => result.data)
     .filter((row) => row.home && row.away)
+    .filter((row) => !input.league || competitionMatchesLeague(row.competition, input.league))
     .map((row, index) => ({
       id: row.id ?? `live-${index}-${slugify(`${row.home}-${row.away}-${row.status ?? ""}`)}`,
-      leagueKey: "live",
-      leagueName: "Live Football",
+      leagueKey: input.league?.key ?? "live",
+      leagueName: input.league?.displayName ?? cleanCompetitionName(row.competition) ?? "Live Football",
       kickoffLocal: extractKickoffTime(row.time),
       minute: extractMinute(row.status),
       homeTeam: cleanText(row.home) ?? "Unknown home team",
@@ -61,7 +64,8 @@ export function parseLiveFlashscoreRows(input: {
       awayScore: cleanText(row.awayScore),
       status: normalizeStatus(row.status),
       source: "flashscore" as const,
-      sourceUrl: "https://www.flashscore.com/football/"
+      sourceUrl: "https://www.flashscore.com/football/",
+      competitionName: cleanCompetitionName(row.competition)
     }))
     .filter((match) => match.status === "live");
 }
@@ -126,6 +130,41 @@ function extractMinute(status?: string): string | undefined {
   }
 
   return undefined;
+}
+
+function cleanCompetitionName(value?: string): string | undefined {
+  const cleaned = cleanText(value);
+
+  if (!cleaned) {
+    return undefined;
+  }
+
+  return cleaned
+    .replace(/([a-z])([A-Z])/g, "$1 - $2")
+    .replace(/\b[A-Z]+:\s*Draw\b/g, "")
+    .replace(/\bWORLD:\s*Draw\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function competitionMatchesLeague(competition: string | undefined, league: LeagueConfig): boolean {
+  const normalizedCompetition = normalizeCompetitionText(competition);
+
+  if (!normalizedCompetition) {
+    return false;
+  }
+
+  return [league.displayName, league.key, ...league.aliases].some((candidate) =>
+    normalizedCompetition.includes(normalizeCompetitionText(candidate))
+  );
+}
+
+function normalizeCompetitionText(value?: string): string {
+  return cleanText(value)
+    ?.toLowerCase()
+    .replace(/play-?offs/g, "play offs")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim() ?? "";
 }
 
 export function parseFlashscoreDateTime(value?: string, targetDate?: string): {

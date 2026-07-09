@@ -21,6 +21,7 @@ npm run matches -- --league la-liga --json
 npm run matches -- --league champions-league --markdown
 npm run matches -- --league bundesliga --no-cache
 npm run live
+npm run live -- --league world-cup
 npm run live -- --json
 ```
 
@@ -35,6 +36,7 @@ football today --league la-liga --json
 football today --league world-cup --markdown
 football today --league premier-league --timezone Europe/Copenhagen --no-cache
 football live
+football live --league world-cup
 football live --json
 ```
 
