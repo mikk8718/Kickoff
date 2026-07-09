@@ -23,7 +23,9 @@ describe("FlashscorePageParser", () => {
         {
           time: "21.08. 21:00",
           home: "Arsenal",
-          away: "Coventry"
+          away: "Coventry",
+          homeScore: "-",
+          awayScore: "-"
         },
         {
           time: "22.08. 13:30",
@@ -35,7 +37,9 @@ describe("FlashscorePageParser", () => {
       expect.objectContaining({
         dateLocal: "2026-08-21",
         kickoffLocal: "21:00",
-        kickoffTimestampLocal: "2026-08-21 21:00"
+        kickoffTimestampLocal: "2026-08-21 21:00",
+        homeScore: undefined,
+        awayScore: undefined
       })
     ]);
   });
@@ -156,5 +160,29 @@ describe("FlashscorePageParser", () => {
         awayTeam: "Morocco"
       })
     ]);
+  });
+
+  it("does not match short aliases inside unrelated competition names", () => {
+    expect(parseLiveFlashscoreRows({
+      league: leagues["premier-league"],
+      rows: [
+        {
+          competition: "World Championship - Play OffsWORLD: Draw",
+          status: "80",
+          home: "France",
+          away: "Morocco",
+          homeScore: "2",
+          awayScore: "0"
+        },
+        {
+          competition: "Liga 1PERU",
+          status: "80",
+          home: "Grau",
+          away: "Carlos Mannucci",
+          homeScore: "1",
+          awayScore: "1"
+        }
+      ]
+    })).toEqual([]);
   });
 });

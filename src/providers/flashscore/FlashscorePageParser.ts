@@ -40,8 +40,8 @@ export function parseFlashscoreRows(input: {
         minute: extractMinute(row.status),
         homeTeam: cleanText(row.home) ?? "Unknown home team",
         awayTeam: cleanText(row.away) ?? "Unknown away team",
-        homeScore: cleanText(row.homeScore),
-        awayScore: cleanText(row.awayScore),
+        homeScore: normalizeScore(row.homeScore),
+        awayScore: normalizeScore(row.awayScore),
         status: normalizeStatus(row.status),
         source: "flashscore" as const,
         sourceUrl: input.league.flashscoreUrl
@@ -100,8 +100,8 @@ export function parseLiveFlashscoreRows(input: {
       minute: extractMinute(row.status),
       homeTeam: cleanText(row.home) ?? "Unknown home team",
       awayTeam: cleanText(row.away) ?? "Unknown away team",
-      homeScore: cleanText(row.homeScore),
-      awayScore: cleanText(row.awayScore),
+      homeScore: normalizeScore(row.homeScore),
+      awayScore: normalizeScore(row.awayScore),
       status: normalizeStatus(row.status),
       source: "flashscore" as const,
       sourceUrl: "https://www.flashscore.com/football/",
@@ -164,8 +164,8 @@ function normalizeFixtureRow(input: {
     minute: extractMinute(input.row.status),
     homeTeam: cleanText(input.row.home) ?? "Unknown home team",
     awayTeam: cleanText(input.row.away) ?? "Unknown away team",
-    homeScore: cleanText(input.row.homeScore),
-    awayScore: cleanText(input.row.awayScore),
+    homeScore: normalizeScore(input.row.homeScore),
+    awayScore: normalizeScore(input.row.awayScore),
     status: normalizeStatus(input.row.status),
     source: "flashscore",
     sourceUrl: input.league.flashscoreUrl
@@ -174,6 +174,16 @@ function normalizeFixtureRow(input: {
 
 function extractKickoffTime(value?: string): string | undefined {
   return parseFlashscoreDateTime(value)?.time ?? cleanText(value);
+}
+
+function normalizeScore(value?: string): string | undefined {
+  const cleaned = cleanText(value);
+
+  if (!cleaned || cleaned === "-") {
+    return undefined;
+  }
+
+  return cleaned;
 }
 
 function formatLocalTimestamp(dateTime?: {
@@ -232,9 +242,10 @@ function competitionMatchesLeague(competition: string | undefined, league: Leagu
     return false;
   }
 
-  return [league.displayName, league.key, ...league.aliases].some((candidate) =>
-    normalizedCompetition.includes(normalizeCompetitionText(candidate))
-  );
+  return [league.displayName, league.key, ...league.aliases]
+    .map(normalizeCompetitionText)
+    .filter((candidate) => candidate.length >= 4)
+    .some((candidate) => normalizedCompetition.includes(candidate));
 }
 
 function normalizeCompetitionText(value?: string): string {
