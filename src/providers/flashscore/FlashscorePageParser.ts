@@ -7,6 +7,8 @@ const rawFlashscoreRowSchema = z.object({
   time: z.string().optional(),
   home: z.string().optional(),
   away: z.string().optional(),
+  homeScore: z.string().optional(),
+  awayScore: z.string().optional(),
   status: z.string().optional()
 });
 
@@ -28,15 +30,43 @@ export function parseFlashscoreRows(input: {
       leagueKey: input.league.key,
       leagueName: input.league.displayName,
       kickoffLocal: extractKickoffTime(row.time),
+      minute: extractMinute(row.status),
       homeTeam: cleanText(row.home) ?? "Unknown home team",
       awayTeam: cleanText(row.away) ?? "Unknown away team",
+      homeScore: cleanText(row.homeScore),
+      awayScore: cleanText(row.awayScore),
       status: normalizeStatus(row.status),
       source: "flashscore" as const,
       sourceUrl: input.league.flashscoreUrl
     }));
 }
 
-function normalizeStatus(status?: string): MatchStatus {
+export function parseLiveFlashscoreRows(input: {
+  rows: unknown[];
+}): Match[] {
+  return input.rows
+    .map((row) => rawFlashscoreRowSchema.safeParse(row))
+    .filter((result) => result.success)
+    .map((result) => result.data)
+    .filter((row) => row.home && row.away)
+    .map((row, index) => ({
+      id: row.id ?? `live-${index}-${slugify(`${row.home}-${row.away}-${row.status ?? ""}`)}`,
+      leagueKey: "live",
+      leagueName: "Live Football",
+      kickoffLocal: extractKickoffTime(row.time),
+      minute: extractMinute(row.status),
+      homeTeam: cleanText(row.home) ?? "Unknown home team",
+      awayTeam: cleanText(row.away) ?? "Unknown away team",
+      homeScore: cleanText(row.homeScore),
+      awayScore: cleanText(row.awayScore),
+      status: normalizeStatus(row.status),
+      source: "flashscore" as const,
+      sourceUrl: "https://www.flashscore.com/football/"
+    }))
+    .filter((match) => match.status === "live");
+}
+
+export function normalizeStatus(status?: string): MatchStatus {
   const normalized = cleanText(status)?.toLowerCase();
 
   if (!normalized) {
@@ -74,6 +104,28 @@ function rowBelongsToDate(row: RawFlashscoreRow, targetDate: string): boolean {
 
 function extractKickoffTime(value?: string): string | undefined {
   return parseFlashscoreDateTime(value)?.time ?? cleanText(value);
+}
+
+function extractMinute(status?: string): string | undefined {
+  const cleaned = cleanText(status);
+
+  if (!cleaned) {
+    return undefined;
+  }
+
+  if (/^\d{1,3}'?$/.test(cleaned)) {
+    return cleaned.endsWith("'") ? cleaned : `${cleaned}'`;
+  }
+
+  if (["HT", "Half Time"].includes(cleaned)) {
+    return "HT";
+  }
+
+  if (cleaned.toLowerCase() === "live") {
+    return "live";
+  }
+
+  return undefined;
 }
 
 export function parseFlashscoreDateTime(value?: string, targetDate?: string): {

@@ -13,7 +13,16 @@ export function formatConsole(input: {
     `${input.leagueName} - ${input.date}`,
     "",
     ...input.matches.map((match) =>
-      `${match.kickoffLocal ?? "--:--"} ${match.homeTeam} vs ${match.awayTeam}`
+      formatMatchLine(match)
     )
   ].join("\n");
+}
+
+function formatMatchLine(match: Match): string {
+  const score = match.homeScore !== undefined && match.awayScore !== undefined
+    ? `${match.homeScore}-${match.awayScore}`
+    : "vs";
+  const timeOrMinute = match.minute ?? match.kickoffLocal ?? "--:--";
+
+  return `${timeOrMinute} ${match.homeTeam} ${score} ${match.awayTeam}`;
 }

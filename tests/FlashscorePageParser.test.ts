@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseFlashscoreDateTime, parseFlashscoreRows } from "../src/providers/flashscore/FlashscorePageParser.js";
+import {
+  parseFlashscoreDateTime,
+  parseFlashscoreRows,
+  parseLiveFlashscoreRows
+} from "../src/providers/flashscore/FlashscorePageParser.js";
 import { leagues } from "../src/leagues/leagues.js";
 
 describe("FlashscorePageParser", () => {
@@ -27,5 +31,35 @@ describe("FlashscorePageParser", () => {
         }
       ]
     })).toHaveLength(1);
+  });
+
+  it("parses live rows with score and minute", () => {
+    expect(parseLiveFlashscoreRows({
+      rows: [
+        {
+          status: "42",
+          home: "Denmark",
+          away: "Mexico",
+          homeScore: "1",
+          awayScore: "0"
+        },
+        {
+          status: "Finished",
+          home: "Qarabag",
+          away: "Vestri",
+          homeScore: "3",
+          awayScore: "0"
+        }
+      ]
+    })).toEqual([
+      expect.objectContaining({
+        minute: "42'",
+        homeTeam: "Denmark",
+        awayTeam: "Mexico",
+        homeScore: "1",
+        awayScore: "0",
+        status: "live"
+      })
+    ]);
   });
 });

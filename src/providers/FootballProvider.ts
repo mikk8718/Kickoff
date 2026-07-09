@@ -14,8 +14,11 @@ export type Match = {
   leagueName: string;
   kickoffLocal?: string;
   kickoffUtc?: string;
+  minute?: string;
   homeTeam: string;
   awayTeam: string;
+  homeScore?: string;
+  awayScore?: string;
   status: MatchStatus;
   source: "flashscore";
   sourceUrl?: string;
@@ -26,5 +29,9 @@ export interface FootballProvider {
     league: LeagueConfig;
     timezone: string;
     date: string;
+  }): Promise<Match[]>;
+
+  getLiveMatches(input: {
+    timezone: string;
   }): Promise<Match[]>;
 }

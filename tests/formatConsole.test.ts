@@ -20,4 +20,25 @@ describe("formatConsole", () => {
       ]
     })).toContain("Premier League - 2026-08-21");
   });
+
+  it("prints score and minute for live matches", () => {
+    expect(formatConsole({
+      leagueName: "Live Football",
+      date: "2026-07-09",
+      matches: [
+        {
+          id: "match-1",
+          leagueKey: "live",
+          leagueName: "Live Football",
+          minute: "42'",
+          homeTeam: "Denmark",
+          awayTeam: "Mexico",
+          homeScore: "1",
+          awayScore: "0",
+          status: "live",
+          source: "flashscore"
+        }
+      ]
+    })).toContain("42' Denmark 1-0 Mexico");
+  });
 });

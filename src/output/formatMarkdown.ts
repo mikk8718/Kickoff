@@ -14,14 +14,22 @@ export function formatMarkdown(input: {
     "",
     `## ${input.leagueName}`,
     "",
-    "| Time | Home | Away | Status |",
-    "|---|---|---|---|",
+    "| Time | Home | Score | Away | Status |",
+    "|---|---|---|---|---|",
     ...input.matches.map((match) =>
-      `| ${match.kickoffLocal ?? ""} | ${escapeCell(match.homeTeam)} | ${escapeCell(match.awayTeam)} | ${match.status} |`
+      `| ${match.minute ?? match.kickoffLocal ?? ""} | ${escapeCell(match.homeTeam)} | ${formatScore(match)} | ${escapeCell(match.awayTeam)} | ${match.status} |`
     )
   ].join("\n");
 }
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|");
+}
+
+function formatScore(match: Match): string {
+  if (match.homeScore === undefined || match.awayScore === undefined) {
+    return "";
+  }
+
+  return `${match.homeScore}-${match.awayScore}`;
 }

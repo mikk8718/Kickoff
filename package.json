@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
+    "live": "tsx src/cli.ts live",
     "matches": "tsx src/cli.ts today",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

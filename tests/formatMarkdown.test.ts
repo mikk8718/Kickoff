@@ -22,6 +22,6 @@ describe("formatMarkdown", () => {
       date: "2026-07-09",
       timezone: "Europe/Copenhagen",
       matches
-    })).toContain("| 16:00 | Arsenal | Chelsea | scheduled |");
+    })).toContain("| 16:00 | Arsenal |  | Chelsea | scheduled |");
   });
 });

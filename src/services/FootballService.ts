@@ -64,4 +64,47 @@ export class FootballService {
       throw error;
     }
   }
+
+  async getLiveMatches(input: {
+    timezone: string;
+    useCache: boolean;
+  }): Promise<{ matches: Match[]; usedCache: boolean }> {
+    const cacheKey = `flashscore-live-${input.timezone}`;
+    const liveCacheTtlSeconds = 60;
+
+    if (input.useCache) {
+      const cached = await this.cache.get<Match[]>(cacheKey, liveCacheTtlSeconds);
+
+      if (cached) {
+        return {
+          matches: cached,
+          usedCache: true
+        };
+      }
+    }
+
+    try {
+      const matches = await this.provider.getLiveMatches({
+        timezone: input.timezone
+      });
+
+      await this.cache.set(cacheKey, matches);
+
+      return {
+        matches,
+        usedCache: false
+      };
+    } catch (error) {
+      const stale = await this.cache.get<Match[]>(cacheKey);
+
+      if (stale) {
+        return {
+          matches: stale,
+          usedCache: true
+        };
+      }
+
+      throw error;
+    }
+  }
 }

@@ -100,4 +100,72 @@ program
     }
   });
 
+program
+  .command("live")
+  .description("Show live football scores with match minute/status.")
+  .option("-t, --timezone <timezone>", "IANA timezone", env.timezone)
+  .option("--json", "print JSON output")
+  .option("--markdown", "print Markdown output")
+  .option("--no-cache", "force a fresh scrape")
+  .option("--debug", "print debug logs")
+  .action(async (options: {
+    timezone: string;
+    json?: boolean;
+    markdown?: boolean;
+    cache?: boolean;
+    debug?: boolean;
+  }) => {
+    const logger = pino({
+      enabled: Boolean(options.debug),
+      level: "debug"
+    });
+
+    try {
+      const date = todayKey(options.timezone);
+      const service = new FootballService({
+        provider: new FlashscoreProvider(),
+        cache: new FileCache(env.cacheDir),
+        cacheTtlSeconds: env.cacheTtlSeconds
+      });
+
+      const result = await service.getLiveMatches({
+        timezone: options.timezone,
+        useCache: options.cache !== false
+      });
+
+      if (result.usedCache) {
+        logger.debug("Using cached Flashscore live data.");
+      }
+
+      if (options.json) {
+        console.log(formatJson({
+          leagueName: "Live Football",
+          date,
+          timezone: options.timezone,
+          matches: result.matches
+        }));
+        return;
+      }
+
+      if (options.markdown) {
+        console.log(formatMarkdown({
+          leagueName: "Live Football",
+          date,
+          timezone: options.timezone,
+          matches: result.matches
+        }));
+        return;
+      }
+
+      console.log(formatConsole({
+        leagueName: "Live Football",
+        date,
+        matches: result.matches
+      }));
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : "Unexpected error.");
+      process.exitCode = 1;
+    }
+  });
+
 program.parse();
