@@ -30,7 +30,13 @@ describe("FlashscorePageParser", () => {
           away: "Manchester Utd"
         }
       ]
-    })).toHaveLength(1);
+    })).toEqual([
+      expect.objectContaining({
+        dateLocal: "2026-08-21",
+        kickoffLocal: "21:00",
+        kickoffTimestampLocal: "2026-08-21 21:00"
+      })
+    ]);
   });
 
   it("parses live rows with score and minute", () => {

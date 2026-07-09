@@ -14,10 +14,10 @@ export function formatMarkdown(input: {
     "",
     `## ${input.leagueName}`,
     "",
-    "| Time | Home | Score | Away | Status |",
-    "|---|---|---|---|---|",
+    "| Date | Time | Timestamp | Home | Score | Away | Status |",
+    "|---|---|---|---|---|---|---|",
     ...input.matches.map((match) =>
-      `| ${match.minute ?? match.kickoffLocal ?? ""} | ${escapeCell(match.homeTeam)} | ${formatScore(match)} | ${escapeCell(match.awayTeam)} | ${match.status} |`
+      `| ${match.dateLocal ?? ""} | ${match.minute ?? match.kickoffLocal ?? ""} | ${match.kickoffTimestampLocal ?? ""} | ${escapeCell(match.homeTeam)} | ${formatScore(match)} | ${escapeCell(match.awayTeam)} | ${match.status} |`
     )
   ].join("\n");
 }

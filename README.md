@@ -25,6 +25,16 @@ npm run live -- --league world-cup
 npm run live -- --json
 ```
 
+Fixture output includes a local date/time per match:
+
+```text
+Premier League - 2026-08-21
+
+2026-08-21 21:00 Arsenal vs Coventry
+```
+
+JSON output also includes `dateLocal`, `kickoffLocal`, and `kickoffTimestampLocal`.
+
 The CLI defaults to `Europe/Copenhagen`.
 
 ## Commands

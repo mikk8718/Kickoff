@@ -12,7 +12,9 @@ export type Match = {
   id: string;
   leagueKey: string;
   leagueName: string;
+  dateLocal?: string;
   kickoffLocal?: string;
+  kickoffTimestampLocal?: string;
   kickoffUtc?: string;
   minute?: string;
   homeTeam: string;

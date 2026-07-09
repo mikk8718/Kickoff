@@ -9,7 +9,9 @@ describe("formatMarkdown", () => {
         id: "match-1",
         leagueKey: "premier-league",
         leagueName: "Premier League",
+        dateLocal: "2026-07-09",
         kickoffLocal: "16:00",
+        kickoffTimestampLocal: "2026-07-09 16:00",
         homeTeam: "Arsenal",
         awayTeam: "Chelsea",
         status: "scheduled",
@@ -22,6 +24,6 @@ describe("formatMarkdown", () => {
       date: "2026-07-09",
       timezone: "Europe/Copenhagen",
       matches
-    })).toContain("| 16:00 | Arsenal |  | Chelsea | scheduled |");
+    })).toContain("| 2026-07-09 | 16:00 | 2026-07-09 16:00 | Arsenal |  | Chelsea | scheduled |");
   });
 });

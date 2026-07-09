@@ -26,20 +26,26 @@ export function parseFlashscoreRows(input: {
     .map((result) => result.data)
     .filter((row) => row.home && row.away)
     .filter((row) => rowBelongsToDate(row, input.date))
-    .map((row, index) => ({
-      id: row.id ?? `${input.league.key}-${index}-${slugify(`${row.home}-${row.away}-${row.time ?? ""}`)}`,
-      leagueKey: input.league.key,
-      leagueName: input.league.displayName,
-      kickoffLocal: extractKickoffTime(row.time),
-      minute: extractMinute(row.status),
-      homeTeam: cleanText(row.home) ?? "Unknown home team",
-      awayTeam: cleanText(row.away) ?? "Unknown away team",
-      homeScore: cleanText(row.homeScore),
-      awayScore: cleanText(row.awayScore),
-      status: normalizeStatus(row.status),
-      source: "flashscore" as const,
-      sourceUrl: input.league.flashscoreUrl
-    }));
+    .map((row, index) => {
+      const dateTime = parseFlashscoreDateTime(row.time, input.date);
+
+      return {
+        id: row.id ?? `${input.league.key}-${index}-${slugify(`${row.home}-${row.away}-${row.time ?? ""}`)}`,
+        leagueKey: input.league.key,
+        leagueName: input.league.displayName,
+        dateLocal: dateTime?.date,
+        kickoffLocal: dateTime?.time ?? cleanText(row.time),
+        kickoffTimestampLocal: formatLocalTimestamp(dateTime),
+        minute: extractMinute(row.status),
+        homeTeam: cleanText(row.home) ?? "Unknown home team",
+        awayTeam: cleanText(row.away) ?? "Unknown away team",
+        homeScore: cleanText(row.homeScore),
+        awayScore: cleanText(row.awayScore),
+        status: normalizeStatus(row.status),
+        source: "flashscore" as const,
+        sourceUrl: input.league.flashscoreUrl
+      };
+    });
 }
 
 export function parseLiveFlashscoreRows(input: {
@@ -108,6 +114,17 @@ function rowBelongsToDate(row: RawFlashscoreRow, targetDate: string): boolean {
 
 function extractKickoffTime(value?: string): string | undefined {
   return parseFlashscoreDateTime(value)?.time ?? cleanText(value);
+}
+
+function formatLocalTimestamp(dateTime?: {
+  date?: string;
+  time?: string;
+}): string | undefined {
+  if (!dateTime?.date || !dateTime.time) {
+    return undefined;
+  }
+
+  return `${dateTime.date} ${dateTime.time}`;
 }
 
 function extractMinute(status?: string): string | undefined {
