@@ -7,6 +7,11 @@ import { resolveLeague, UnknownLeagueError } from "./leagues/resolveLeague.js";
 import { formatConsole } from "./output/formatConsole.js";
 import { formatJson } from "./output/formatJson.js";
 import { formatMarkdown } from "./output/formatMarkdown.js";
+import {
+  formatOverviewConsole,
+  formatOverviewJson,
+  formatOverviewMarkdown
+} from "./output/formatOverview.js";
 import { FlashscoreProvider } from "./providers/flashscore/FlashscoreProvider.js";
 import { FootballService } from "./services/FootballService.js";
 import { isDateKey, todayKey } from "./utils/date.js";
@@ -184,6 +189,103 @@ program
         date: label,
         matches: result.matches
       }));
+    } catch (error) {
+      if (error instanceof UnknownLeagueError) {
+        const suggestion = error.suggestion ? `\nDid you mean "${error.suggestion.displayName}"?` : "";
+        console.error(`${error.message}${suggestion}`);
+        process.exitCode = 1;
+        return;
+      }
+
+      console.error(error instanceof Error ? error.message : "Unexpected error.");
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command("overview")
+  .description("Show live scores and upcoming fixtures for a league.")
+  .requiredOption("-l, --league <league>", "league name, key, or alias")
+  .option("-f, --from <date>", "upcoming fixture start date in YYYY-MM-DD format")
+  .option("--days <days>", "only show upcoming fixtures within this many days")
+  .option("--limit <limit>", "maximum number of upcoming matches to print", "20")
+  .option("-t, --timezone <timezone>", "IANA timezone", env.timezone)
+  .option("--json", "print JSON output")
+  .option("--markdown", "print Markdown output")
+  .option("--no-cache", "force a fresh scrape")
+  .option("--debug", "print debug logs")
+  .action(async (options: {
+    league: string;
+    from?: string;
+    days?: string;
+    limit: string;
+    timezone: string;
+    json?: boolean;
+    markdown?: boolean;
+    cache?: boolean;
+    debug?: boolean;
+  }) => {
+    const logger = pino({
+      enabled: Boolean(options.debug),
+      level: "debug"
+    });
+
+    try {
+      const league = resolveLeague(options.league);
+      const date = todayKey(options.timezone);
+      const fromDate = options.from ?? date;
+      const days = parseOptionalPositiveInteger(options.days, "--days");
+      const limit = parsePositiveInteger(options.limit, "--limit");
+
+      if (!isDateKey(fromDate)) {
+        throw new Error(`Invalid --from date: "${fromDate}". Use YYYY-MM-DD.`);
+      }
+
+      const service = new FootballService({
+        provider: new FlashscoreProvider(),
+        cache: new FileCache(env.cacheDir),
+        cacheTtlSeconds: env.cacheTtlSeconds
+      });
+
+      const [liveResult, upcomingResult] = await Promise.all([
+        service.getLiveMatches({
+          timezone: options.timezone,
+          league,
+          useCache: options.cache !== false
+        }),
+        service.getUpcomingMatches({
+          league,
+          timezone: options.timezone,
+          fromDate,
+          days,
+          limit,
+          useCache: options.cache !== false
+        })
+      ]);
+
+      if (liveResult.usedCache || upcomingResult.usedCache) {
+        logger.debug("Using cached Flashscore overview data.");
+      }
+
+      const overview = {
+        leagueName: league.displayName,
+        date,
+        timezone: options.timezone,
+        liveMatches: liveResult.matches,
+        upcomingMatches: upcomingResult.matches
+      };
+
+      if (options.json) {
+        console.log(formatOverviewJson(overview));
+        return;
+      }
+
+      if (options.markdown) {
+        console.log(formatOverviewMarkdown(overview));
+        return;
+      }
+
+      console.log(formatOverviewConsole(overview));
     } catch (error) {
       if (error instanceof UnknownLeagueError) {
         const suggestion = error.suggestion ? `\nDid you mean "${error.suggestion.displayName}"?` : "";

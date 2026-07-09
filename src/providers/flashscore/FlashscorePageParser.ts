@@ -221,6 +221,7 @@ function cleanCompetitionName(value?: string): string | undefined {
     .replace(/\b[A-Z]+:\s*Draw\b/g, "")
     .replace(/\bWORLD:\s*Draw\b/g, "")
     .replace(/\s+/g, " ")
+    .replace(/\s+-\s*$/g, "")
     .trim();
 }
 
