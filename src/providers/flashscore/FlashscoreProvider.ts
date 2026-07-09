@@ -3,6 +3,7 @@ import type { FootballProvider } from "../FootballProvider.js";
 import type { LeagueConfig } from "../../leagues/leagues.js";
 import {
   parseFlashscoreRows,
+  parseFinishedFlashscoreRows,
   parseLiveFlashscoreRows,
   parseUpcomingFlashscoreRows
 } from "./FlashscorePageParser.js";
@@ -139,6 +140,27 @@ export class FlashscoreProvider implements FootballProvider {
     timezone: string;
     league?: LeagueConfig;
   }) {
+    const rows = await this.getScoreboardRows(input.timezone);
+
+    return parseLiveFlashscoreRows({
+      rows,
+      league: input.league
+    });
+  }
+
+  async getFinishedMatches(input: {
+    timezone: string;
+    league?: LeagueConfig;
+  }) {
+    const rows = await this.getScoreboardRows(input.timezone);
+
+    return parseFinishedFlashscoreRows({
+      rows,
+      league: input.league
+    });
+  }
+
+  private async getScoreboardRows(timezone: string) {
     let browser: Browser | undefined;
 
     try {
@@ -152,7 +174,7 @@ export class FlashscoreProvider implements FootballProvider {
     try {
       const page = await browser.newPage({
         locale: "en-US",
-        timezoneId: input.timezone,
+        timezoneId: timezone,
         userAgent: "football-scraper/0.1 local personal project"
       });
 
@@ -169,7 +191,7 @@ export class FlashscoreProvider implements FootballProvider {
         return [];
       }
 
-      const rows = await page.$$eval(flashscoreSelectors.matchRow, (elements, selectors) => {
+      return await page.$$eval(flashscoreSelectors.matchRow, (elements, selectors) => {
         return elements.map((row) => {
           let sibling = row.previousElementSibling;
           let competition: string | undefined;
@@ -196,10 +218,6 @@ export class FlashscoreProvider implements FootballProvider {
         });
       }, flashscoreSelectors);
 
-      return parseLiveFlashscoreRows({
-        rows,
-        league: input.league
-      });
     } finally {
       await browser.close();
     }

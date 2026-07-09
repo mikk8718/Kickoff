@@ -258,7 +258,12 @@ program
         cacheTtlSeconds: env.cacheTtlSeconds
       });
 
-      const [liveResult, upcomingResult] = await Promise.all([
+      const [finishedResult, liveResult, upcomingResult] = await Promise.all([
+        service.getFinishedMatches({
+          timezone: options.timezone,
+          league,
+          useCache: options.cache !== false
+        }),
         service.getLiveMatches({
           timezone: options.timezone,
           league,
@@ -275,7 +280,7 @@ program
         })
       ]);
 
-      if (liveResult.usedCache || upcomingResult.usedCache) {
+      if (finishedResult.usedCache || liveResult.usedCache || upcomingResult.usedCache) {
         logger.debug("Using cached Flashscore overview data.");
       }
 
@@ -283,6 +288,7 @@ program
         leagueName: league.displayName,
         date,
         timezone: options.timezone,
+        finishedMatches: finishedResult.matches,
         liveMatches: liveResult.matches,
         upcomingMatches: upcomingResult.matches
       };

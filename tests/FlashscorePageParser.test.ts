@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseFlashscoreDateTime,
   parseFlashscoreRows,
+  parseFinishedFlashscoreRows,
   parseLiveFlashscoreRows,
   parseUpcomingFlashscoreRows
 } from "../src/providers/flashscore/FlashscorePageParser.js";
@@ -168,6 +169,38 @@ describe("FlashscorePageParser", () => {
         homeScore: "1",
         awayScore: "0",
         status: "live"
+      })
+    ]);
+  });
+
+  it("parses finished rows with final scores", () => {
+    expect(parseFinishedFlashscoreRows({
+      league: leagues["world-cup"],
+      rows: [
+        {
+          competition: "World Championship - Play OffsWORLD: Draw",
+          status: "Finished",
+          home: "Portugal",
+          away: "Germany",
+          homeScore: "1",
+          awayScore: "2"
+        },
+        {
+          competition: "World Championship - Play OffsWORLD: Draw",
+          status: "56",
+          home: "France",
+          away: "Morocco",
+          homeScore: "0",
+          awayScore: "0"
+        }
+      ]
+    })).toEqual([
+      expect.objectContaining({
+        homeTeam: "Portugal",
+        awayTeam: "Germany",
+        homeScore: "1",
+        awayScore: "2",
+        status: "finished"
       })
     ]);
   });

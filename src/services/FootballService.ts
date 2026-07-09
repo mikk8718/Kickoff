@@ -110,6 +110,51 @@ export class FootballService {
     }
   }
 
+  async getFinishedMatches(input: {
+    timezone: string;
+    league?: LeagueConfig;
+    useCache: boolean;
+  }): Promise<{ matches: Match[]; usedCache: boolean }> {
+    const cacheKey = `flashscore-finished-${input.league?.key ?? "all"}-${input.timezone}`;
+    const finishedCacheTtlSeconds = 300;
+
+    if (input.useCache) {
+      const cached = await this.cache.get<Match[]>(cacheKey, finishedCacheTtlSeconds);
+
+      if (cached) {
+        return {
+          matches: cached,
+          usedCache: true
+        };
+      }
+    }
+
+    try {
+      const matches = await this.provider.getFinishedMatches({
+        timezone: input.timezone,
+        league: input.league
+      });
+
+      await this.cache.set(cacheKey, matches);
+
+      return {
+        matches,
+        usedCache: false
+      };
+    } catch (error) {
+      const stale = await this.cache.get<Match[]>(cacheKey);
+
+      if (stale) {
+        return {
+          matches: stale,
+          usedCache: true
+        };
+      }
+
+      throw error;
+    }
+  }
+
   async getUpcomingMatches(input: {
     league: LeagueConfig;
     timezone: string;

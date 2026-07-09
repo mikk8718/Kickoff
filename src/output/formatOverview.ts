@@ -4,6 +4,7 @@ export type OverviewData = {
   leagueName: string;
   date: string;
   timezone: string;
+  finishedMatches: Match[];
   liveMatches: Match[];
   upcomingMatches: Match[];
 };
@@ -12,6 +13,9 @@ export function formatOverviewConsole(input: OverviewData): string {
   return [
     `${input.leagueName} - Overview`,
     `Date: ${input.date}`,
+    "",
+    "FINISHED",
+    ...formatSection(input.finishedMatches, "No finished matches."),
     "",
     "LIVE",
     ...formatSection(input.liveMatches, "No live matches."),
@@ -27,6 +31,7 @@ export function formatOverviewJson(input: OverviewData): string {
       league: input.leagueName,
       date: input.date,
       timezone: input.timezone,
+      finishedMatches: input.finishedMatches,
       liveMatches: input.liveMatches,
       upcomingMatches: input.upcomingMatches
     },
@@ -44,6 +49,10 @@ export function formatOverviewMarkdown(input: OverviewData): string {
     "Source: Flashscore",
     "",
     `## ${input.leagueName}`,
+    "",
+    "### Finished",
+    "",
+    ...formatMarkdownRows(input.finishedMatches, "No finished matches."),
     "",
     "### Live",
     "",
@@ -67,9 +76,17 @@ function formatMatchLine(match: Match): string {
   const score = match.homeScore !== undefined && match.awayScore !== undefined
     ? `${match.homeScore}-${match.awayScore}`
     : "vs";
-  const timeOrMinute = match.minute ?? match.kickoffTimestampLocal ?? match.kickoffLocal ?? match.dateLocal ?? "--:--";
+  const timeOrMinute = match.minute ?? match.kickoffTimestampLocal ?? match.kickoffLocal ?? match.dateLocal ?? formatStatusLabel(match);
 
   return `${timeOrMinute} ${match.homeTeam} ${score} ${match.awayTeam}`;
+}
+
+function formatStatusLabel(match: Match): string {
+  if (match.status === "finished") {
+    return "FT";
+  }
+
+  return "--:--";
 }
 
 function formatMarkdownRows(matches: Match[], emptyMessage: string): string[] {

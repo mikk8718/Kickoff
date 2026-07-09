@@ -6,6 +6,19 @@ describe("formatOverview", () => {
     leagueName: "World Cup",
     date: "2026-07-09",
     timezone: "Europe/Copenhagen",
+    finishedMatches: [
+      {
+        id: "finished-1",
+        leagueKey: "world-cup",
+        leagueName: "World Cup",
+        homeTeam: "Portugal",
+        awayTeam: "Germany",
+        homeScore: "1",
+        awayScore: "2",
+        status: "finished" as const,
+        source: "flashscore" as const
+      }
+    ],
     liveMatches: [
       {
         id: "live-1",
@@ -37,18 +50,21 @@ describe("formatOverview", () => {
   };
 
   it("formats console output in live and upcoming sections", () => {
+    expect(formatOverviewConsole(overview)).toContain("FINISHED\nFT Portugal 1-2 Germany");
     expect(formatOverviewConsole(overview)).toContain("LIVE\n63' France 1-0 Morocco");
     expect(formatOverviewConsole(overview)).toContain("UPCOMING\n2026-07-10 21:00 Spain vs Belgium");
   });
 
-  it("formats JSON with separate live and upcoming arrays", () => {
+  it("formats JSON with separate finished, live, and upcoming arrays", () => {
     expect(JSON.parse(formatOverviewJson(overview))).toEqual(expect.objectContaining({
+      finishedMatches: expect.arrayContaining([expect.objectContaining({ homeTeam: "Portugal" })]),
       liveMatches: expect.arrayContaining([expect.objectContaining({ homeTeam: "France" })]),
       upcomingMatches: expect.arrayContaining([expect.objectContaining({ homeTeam: "Spain" })])
     }));
   });
 
-  it("formats Markdown with live and upcoming headings", () => {
+  it("formats Markdown with finished, live, and upcoming headings", () => {
+    expect(formatOverviewMarkdown(overview)).toContain("### Finished");
     expect(formatOverviewMarkdown(overview)).toContain("### Live");
     expect(formatOverviewMarkdown(overview)).toContain("### Upcoming");
   });

@@ -84,6 +84,20 @@ export function parseLiveFlashscoreRows(input: {
   rows: unknown[];
   league?: LeagueConfig;
 }): Match[] {
+  return parseScoreboardRows(input).filter((match) => match.status === "live");
+}
+
+export function parseFinishedFlashscoreRows(input: {
+  rows: unknown[];
+  league?: LeagueConfig;
+}): Match[] {
+  return parseScoreboardRows(input).filter((match) => match.status === "finished");
+}
+
+function parseScoreboardRows(input: {
+  rows: unknown[];
+  league?: LeagueConfig;
+}): Match[] {
   return input.rows
     .map((row) => rawFlashscoreRowSchema.safeParse(row))
     .filter((result) => result.success)
@@ -104,8 +118,7 @@ export function parseLiveFlashscoreRows(input: {
       source: "flashscore" as const,
       sourceUrl: "https://www.flashscore.com/football/",
       competitionName: cleanCompetitionName(row.competition)
-    }))
-    .filter((match) => match.status === "live");
+    }));
 }
 
 export function normalizeStatus(status?: string): MatchStatus {

@@ -47,4 +47,9 @@ export interface FootballProvider {
     timezone: string;
     league?: LeagueConfig;
   }): Promise<Match[]>;
+
+  getFinishedMatches(input: {
+    timezone: string;
+    league?: LeagueConfig;
+  }): Promise<Match[]>;
 }

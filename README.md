@@ -44,6 +44,8 @@ Premier League - 2026-08-21
 
 JSON output also includes `dateLocal`, `kickoffLocal`, and `kickoffTimestampLocal`.
 
+The `overview` command groups the current matchday into finished, live, and upcoming sections.
+
 The CLI defaults to `Europe/Copenhagen`.
 
 ## Commands
