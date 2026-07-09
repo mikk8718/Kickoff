@@ -1,0 +1,37 @@
+{
+  "name": "football-scraper",
+  "version": "0.1.0",
+  "description": "CLI for showing today's football matches for a league using Flashscore.",
+  "type": "module",
+  "bin": {
+    "football": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "matches": "tsx src/cli.ts today",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "football",
+    "flashscore",
+    "scraper",
+    "playwright"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.1.3",
+    "pino": "^9.3.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "playwright": "^1.45.1",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.4"
+  }
+}
