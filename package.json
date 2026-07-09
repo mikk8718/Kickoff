@@ -11,6 +11,7 @@
     "dev": "tsx src/cli.ts",
     "live": "tsx src/cli.ts live",
     "matches": "tsx src/cli.ts today",
+    "upcoming": "tsx src/cli.ts upcoming",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

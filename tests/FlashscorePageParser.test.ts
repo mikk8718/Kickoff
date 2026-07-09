@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   parseFlashscoreDateTime,
   parseFlashscoreRows,
-  parseLiveFlashscoreRows
+  parseLiveFlashscoreRows,
+  parseUpcomingFlashscoreRows
 } from "../src/providers/flashscore/FlashscorePageParser.js";
 import { leagues } from "../src/leagues/leagues.js";
 
@@ -37,6 +38,63 @@ describe("FlashscorePageParser", () => {
         kickoffTimestampLocal: "2026-08-21 21:00"
       })
     ]);
+  });
+
+  it("parses upcoming rows from a start date", () => {
+    expect(parseUpcomingFlashscoreRows({
+      league: leagues["world-cup"],
+      fromDate: "2026-07-09",
+      limit: 10,
+      rows: [
+        {
+          time: "08.07. 21:00",
+          home: "France",
+          away: "Morocco"
+        },
+        {
+          time: "10.07. 21:00",
+          home: "Spain",
+          away: "Belgium"
+        },
+        {
+          time: "11.07. 21:00",
+          home: "Brazil",
+          away: "Argentina"
+        }
+      ]
+    })).toEqual([
+      expect.objectContaining({
+        kickoffTimestampLocal: "2026-07-10 21:00",
+        homeTeam: "Spain",
+        awayTeam: "Belgium"
+      }),
+      expect.objectContaining({
+        kickoffTimestampLocal: "2026-07-11 21:00",
+        homeTeam: "Brazil",
+        awayTeam: "Argentina"
+      })
+    ]);
+  });
+
+  it("can restrict upcoming rows to a day window", () => {
+    expect(parseUpcomingFlashscoreRows({
+      league: leagues["world-cup"],
+      fromDate: "2026-07-09",
+      days: 2,
+      limit: 10,
+      rows: [
+        {
+          time: "10.07. 21:00",
+          home: "Spain",
+          away: "Belgium"
+        },
+        {
+          time: "11.07. 21:00",
+          home: "Brazil",
+          away: "Argentina"
+        }
+      ]
+    })).toHaveLength(1);
   });
 
   it("parses live rows with score and minute", () => {

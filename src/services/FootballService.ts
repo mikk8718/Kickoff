@@ -109,4 +109,55 @@ export class FootballService {
       throw error;
     }
   }
+
+  async getUpcomingMatches(input: {
+    league: LeagueConfig;
+    timezone: string;
+    fromDate: string;
+    days?: number;
+    limit: number;
+    useCache: boolean;
+  }): Promise<{ matches: Match[]; usedCache: boolean }> {
+    const rangeKey = input.days === undefined ? "all-visible" : `${input.days}-days`;
+    const cacheKey = `flashscore-upcoming-${input.league.key}-${input.fromDate}-${rangeKey}-${input.limit}-${input.timezone}`;
+
+    if (input.useCache) {
+      const cached = await this.cache.get<Match[]>(cacheKey, this.cacheTtlSeconds);
+
+      if (cached) {
+        return {
+          matches: cached,
+          usedCache: true
+        };
+      }
+    }
+
+    try {
+      const matches = await this.provider.getUpcomingMatches({
+        league: input.league,
+        timezone: input.timezone,
+        fromDate: input.fromDate,
+        days: input.days,
+        limit: input.limit
+      });
+
+      await this.cache.set(cacheKey, matches);
+
+      return {
+        matches,
+        usedCache: false
+      };
+    } catch (error) {
+      const stale = await this.cache.get<Match[]>(cacheKey);
+
+      if (stale) {
+        return {
+          matches: stale,
+          usedCache: true
+        };
+      }
+
+      throw error;
+    }
+  }
 }

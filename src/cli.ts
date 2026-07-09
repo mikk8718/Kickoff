@@ -9,7 +9,7 @@ import { formatJson } from "./output/formatJson.js";
 import { formatMarkdown } from "./output/formatMarkdown.js";
 import { FlashscoreProvider } from "./providers/flashscore/FlashscoreProvider.js";
 import { FootballService } from "./services/FootballService.js";
-import { todayKey } from "./utils/date.js";
+import { isDateKey, todayKey } from "./utils/date.js";
 
 const program = new Command();
 
@@ -101,6 +101,103 @@ program
   });
 
 program
+  .command("upcoming")
+  .description("Show upcoming fixtures for a league.")
+  .requiredOption("-l, --league <league>", "league name, key, or alias")
+  .option("-f, --from <date>", "start date in YYYY-MM-DD format")
+  .option("--days <days>", "only show fixtures within this many days")
+  .option("--limit <limit>", "maximum number of matches to print", "20")
+  .option("-t, --timezone <timezone>", "IANA timezone", env.timezone)
+  .option("--json", "print JSON output")
+  .option("--markdown", "print Markdown output")
+  .option("--no-cache", "force a fresh scrape")
+  .option("--debug", "print debug logs")
+  .action(async (options: {
+    league: string;
+    from?: string;
+    days?: string;
+    limit: string;
+    timezone: string;
+    json?: boolean;
+    markdown?: boolean;
+    cache?: boolean;
+    debug?: boolean;
+  }) => {
+    const logger = pino({
+      enabled: Boolean(options.debug),
+      level: "debug"
+    });
+
+    try {
+      const league = resolveLeague(options.league);
+      const fromDate = options.from ?? todayKey(options.timezone);
+      const days = parseOptionalPositiveInteger(options.days, "--days");
+      const limit = parsePositiveInteger(options.limit, "--limit");
+
+      if (!isDateKey(fromDate)) {
+        throw new Error(`Invalid --from date: "${fromDate}". Use YYYY-MM-DD.`);
+      }
+
+      const service = new FootballService({
+        provider: new FlashscoreProvider(),
+        cache: new FileCache(env.cacheDir),
+        cacheTtlSeconds: env.cacheTtlSeconds
+      });
+
+      const result = await service.getUpcomingMatches({
+        league,
+        timezone: options.timezone,
+        fromDate,
+        days,
+        limit,
+        useCache: options.cache !== false
+      });
+
+      if (result.usedCache) {
+        logger.debug("Using cached Flashscore upcoming data.");
+      }
+
+      const label = days === undefined ? `${fromDate} onward` : `${fromDate} + ${days} days`;
+
+      if (options.json) {
+        console.log(formatJson({
+          leagueName: league.displayName,
+          date: label,
+          timezone: options.timezone,
+          matches: result.matches
+        }));
+        return;
+      }
+
+      if (options.markdown) {
+        console.log(formatMarkdown({
+          leagueName: league.displayName,
+          date: label,
+          timezone: options.timezone,
+          matches: result.matches
+        }));
+        return;
+      }
+
+      console.log(formatConsole({
+        leagueName: league.displayName,
+        date: label,
+        matches: result.matches
+      }));
+    } catch (error) {
+      if (error instanceof UnknownLeagueError) {
+        const suggestion = error.suggestion ? `\nDid you mean "${error.suggestion.displayName}"?` : "";
+        console.error(`${error.message}${suggestion}`);
+        process.exitCode = 1;
+        return;
+      }
+
+      console.error(error instanceof Error ? error.message : "Unexpected error.");
+      process.exitCode = 1;
+    }
+  });
+
+program
   .command("live")
   .description("Show live football scores with match minute/status.")
   .option("-l, --league <league>", "optional league name, key, or alias")
@@ -173,3 +270,21 @@ program
   });
 
 program.parse();
+
+function parseOptionalPositiveInteger(value: string | undefined, flag: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return parsePositiveInteger(value, flag);
+}
+
+function parsePositiveInteger(value: string, flag: string): number {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`Invalid ${flag}: "${value}". Use a positive integer.`);
+  }
+
+  return parsed;
+}

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Match, MatchStatus } from "../FootballProvider.js";
 import type { LeagueConfig } from "../../leagues/leagues.js";
+import { addDaysToDateKey } from "../../utils/date.js";
 
 const rawFlashscoreRowSchema = z.object({
   id: z.string().optional(),
@@ -46,6 +47,39 @@ export function parseFlashscoreRows(input: {
         sourceUrl: input.league.flashscoreUrl
       };
     });
+}
+
+export function parseUpcomingFlashscoreRows(input: {
+  rows: unknown[];
+  league: LeagueConfig;
+  fromDate: string;
+  days?: number;
+  limit: number;
+}): Match[] {
+  const throughDate = input.days === undefined
+    ? undefined
+    : addDaysToDateKey(input.fromDate, Math.max(input.days - 1, 0));
+
+  return input.rows
+    .map((row) => rawFlashscoreRowSchema.safeParse(row))
+    .filter((result) => result.success)
+    .map((result) => result.data)
+    .filter((row) => row.home && row.away)
+    .map((row, index) => normalizeFixtureRow({
+      row,
+      index,
+      league: input.league,
+      referenceDate: input.fromDate
+    }))
+    .filter((match) => match.dateLocal !== undefined)
+    .filter((match) => match.dateLocal! >= input.fromDate)
+    .filter((match) => throughDate === undefined || match.dateLocal! <= throughDate)
+    .sort((left, right) =>
+      (left.kickoffTimestampLocal ?? left.dateLocal ?? "").localeCompare(
+        right.kickoffTimestampLocal ?? right.dateLocal ?? ""
+      )
+    )
+    .slice(0, input.limit);
 }
 
 export function parseLiveFlashscoreRows(input: {
@@ -110,6 +144,32 @@ function cleanText(value?: string): string | undefined {
 function rowBelongsToDate(row: RawFlashscoreRow, targetDate: string): boolean {
   const parsed = parseFlashscoreDateTime(row.time, targetDate);
   return parsed?.date === targetDate;
+}
+
+function normalizeFixtureRow(input: {
+  row: RawFlashscoreRow;
+  index: number;
+  league: LeagueConfig;
+  referenceDate: string;
+}): Match {
+  const dateTime = parseFlashscoreDateTime(input.row.time, input.referenceDate);
+
+  return {
+    id: input.row.id ?? `${input.league.key}-${input.index}-${slugify(`${input.row.home}-${input.row.away}-${input.row.time ?? ""}`)}`,
+    leagueKey: input.league.key,
+    leagueName: input.league.displayName,
+    dateLocal: dateTime?.date,
+    kickoffLocal: dateTime?.time ?? cleanText(input.row.time),
+    kickoffTimestampLocal: formatLocalTimestamp(dateTime),
+    minute: extractMinute(input.row.status),
+    homeTeam: cleanText(input.row.home) ?? "Unknown home team",
+    awayTeam: cleanText(input.row.away) ?? "Unknown away team",
+    homeScore: cleanText(input.row.homeScore),
+    awayScore: cleanText(input.row.awayScore),
+    status: normalizeStatus(input.row.status),
+    source: "flashscore",
+    sourceUrl: input.league.flashscoreUrl
+  };
 }
 
 function extractKickoffTime(value?: string): string | undefined {

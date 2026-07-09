@@ -34,6 +34,14 @@ export interface FootballProvider {
     date: string;
   }): Promise<Match[]>;
 
+  getUpcomingMatches(input: {
+    league: LeagueConfig;
+    timezone: string;
+    fromDate: string;
+    days?: number;
+    limit: number;
+  }): Promise<Match[]>;
+
   getLiveMatches(input: {
     timezone: string;
     league?: LeagueConfig;

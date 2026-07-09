@@ -20,6 +20,8 @@ npm run matches -- --league PL
 npm run matches -- --league la-liga --json
 npm run matches -- --league champions-league --markdown
 npm run matches -- --league bundesliga --no-cache
+npm run upcoming -- --league world-cup
+npm run upcoming -- --league world-cup --days 7
 npm run live
 npm run live -- --league world-cup
 npm run live -- --json
@@ -45,6 +47,8 @@ football today --league premier-league --date 2026-08-21
 football today --league la-liga --json
 football today --league world-cup --markdown
 football today --league premier-league --timezone Europe/Copenhagen --no-cache
+football upcoming --league world-cup
+football upcoming --league world-cup --days 7
 football live
 football live --league world-cup
 football live --json
