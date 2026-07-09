@@ -11,7 +11,7 @@ npm install
 npx playwright install chromium
 ```
 
-## Usage
+## Usage in this repo
 
 ```bash
 npm run matches -- --league premier-league
@@ -32,6 +32,8 @@ npm run live -- --league world-cup
 npm run live -- --json
 ```
 
+When using `npm run`, the first `--` separates npm's own options from this app's options. For example, `npm run overview -- --league world-cup` passes `--league world-cup` to the scraper.
+
 Use `--show-more <clicks>` when you want to control how many times Flashscore's fixture page is expanded. Use `--all` for a bounded full-season scrape; it loads more fixture rows and raises the default result limit to `500`.
 
 Fixture output includes a local date/time per match:
@@ -48,7 +50,16 @@ The `overview` command groups the current matchday into finished, live, and upco
 
 The CLI defaults to `Europe/Copenhagen`.
 
-## Commands
+## Optional installed command
+
+The examples below use `football`, the binary name declared in `package.json`. They only work after building and linking/installing the package:
+
+```bash
+npm run build
+npm link
+```
+
+After that, these commands are equivalent to the `npm run ... -- ...` examples above:
 
 ```bash
 football today --league premier-league
