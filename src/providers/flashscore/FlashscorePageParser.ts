@@ -15,17 +15,19 @@ export type RawFlashscoreRow = z.infer<typeof rawFlashscoreRowSchema>;
 export function parseFlashscoreRows(input: {
   rows: unknown[];
   league: LeagueConfig;
+  date: string;
 }): Match[] {
   return input.rows
     .map((row) => rawFlashscoreRowSchema.safeParse(row))
     .filter((result) => result.success)
     .map((result) => result.data)
     .filter((row) => row.home && row.away)
+    .filter((row) => rowBelongsToDate(row, input.date))
     .map((row, index) => ({
       id: row.id ?? `${input.league.key}-${index}-${slugify(`${row.home}-${row.away}-${row.time ?? ""}`)}`,
       leagueKey: input.league.key,
       leagueName: input.league.displayName,
-      kickoffLocal: cleanText(row.time),
+      kickoffLocal: extractKickoffTime(row.time),
       homeTeam: cleanText(row.home) ?? "Unknown home team",
       awayTeam: cleanText(row.away) ?? "Unknown away team",
       status: normalizeStatus(row.status),
@@ -63,6 +65,49 @@ function normalizeStatus(status?: string): MatchStatus {
 function cleanText(value?: string): string | undefined {
   const cleaned = value?.replace(/\s+/g, " ").trim();
   return cleaned || undefined;
+}
+
+function rowBelongsToDate(row: RawFlashscoreRow, targetDate: string): boolean {
+  const parsed = parseFlashscoreDateTime(row.time, targetDate);
+  return parsed?.date === targetDate;
+}
+
+function extractKickoffTime(value?: string): string | undefined {
+  return parseFlashscoreDateTime(value)?.time ?? cleanText(value);
+}
+
+export function parseFlashscoreDateTime(value?: string, targetDate?: string): {
+  date?: string;
+  time?: string;
+} | undefined {
+  const cleaned = cleanText(value);
+
+  if (!cleaned) {
+    return undefined;
+  }
+
+  const datedMatch = cleaned.match(/^(\d{1,2})\.(\d{1,2})\.\s+(\d{1,2}:\d{2})$/);
+
+  if (datedMatch) {
+    const [, day, month, time] = datedMatch;
+    const year = targetDate?.slice(0, 4) ?? String(new Date().getFullYear());
+
+    return {
+      date: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+      time
+    };
+  }
+
+  const timeOnlyMatch = cleaned.match(/^(\d{1,2}:\d{2})$/);
+
+  if (timeOnlyMatch) {
+    return {
+      date: targetDate,
+      time: timeOnlyMatch[1]
+    };
+  }
+
+  return undefined;
 }
 
 function slugify(value: string): string {

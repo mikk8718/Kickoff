@@ -1,15 +1,14 @@
 import type { Match } from "../providers/FootballProvider.js";
-import { todayKey } from "../utils/date.js";
-
 export function formatJson(input: {
   leagueName: string;
+  date: string;
   timezone: string;
   matches: Match[];
 }): string {
   return JSON.stringify(
     {
       league: input.leagueName,
-      date: todayKey(input.timezone),
+      date: input.date,
       timezone: input.timezone,
       matches: input.matches
     },

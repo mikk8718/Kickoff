@@ -1,7 +1,6 @@
 import type { FootballProvider, Match } from "../providers/FootballProvider.js";
 import type { LeagueConfig } from "../leagues/leagues.js";
 import { FileCache } from "../cache/FileCache.js";
-import { todayKey } from "../utils/date.js";
 
 export type FootballServiceOptions = {
   provider: FootballProvider;
@@ -23,9 +22,10 @@ export class FootballService {
   async getTodayMatches(input: {
     league: LeagueConfig;
     timezone: string;
+    date: string;
     useCache: boolean;
   }): Promise<{ matches: Match[]; usedCache: boolean }> {
-    const cacheKey = `flashscore-${input.league.key}-${todayKey(input.timezone)}-${input.timezone}`;
+    const cacheKey = `flashscore-${input.league.key}-${input.date}-${input.timezone}`;
 
     if (input.useCache) {
       const cached = await this.cache.get<Match[]>(cacheKey, this.cacheTtlSeconds);
@@ -41,7 +41,8 @@ export class FootballService {
     try {
       const matches = await this.provider.getTodayMatches({
         league: input.league,
-        timezone: input.timezone
+        timezone: input.timezone,
+        date: input.date
       });
 
       await this.cache.set(cacheKey, matches);

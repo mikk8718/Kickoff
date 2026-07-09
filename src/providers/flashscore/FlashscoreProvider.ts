@@ -15,6 +15,7 @@ export class FlashscoreProvider implements FootballProvider {
   async getTodayMatches(input: {
     league: LeagueConfig;
     timezone: string;
+    date: string;
   }) {
     let browser: Browser | undefined;
 
@@ -58,7 +59,8 @@ export class FlashscoreProvider implements FootballProvider {
 
       return parseFlashscoreRows({
         rows,
-        league: input.league
+        league: input.league,
+        date: input.date
       });
     } finally {
       await browser.close();

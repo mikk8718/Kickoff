@@ -25,5 +25,6 @@ export interface FootballProvider {
   getTodayMatches(input: {
     league: LeagueConfig;
     timezone: string;
+    date: string;
   }): Promise<Match[]>;
 }

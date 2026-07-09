@@ -9,6 +9,7 @@ import { formatJson } from "./output/formatJson.js";
 import { formatMarkdown } from "./output/formatMarkdown.js";
 import { FlashscoreProvider } from "./providers/flashscore/FlashscoreProvider.js";
 import { FootballService } from "./services/FootballService.js";
+import { todayKey } from "./utils/date.js";
 
 const program = new Command();
 
@@ -21,6 +22,7 @@ program
   .command("today")
   .description("Show today's matches for a league.")
   .requiredOption("-l, --league <league>", "league name, key, or alias")
+  .option("-d, --date <date>", "date in YYYY-MM-DD format")
   .option("-t, --timezone <timezone>", "IANA timezone", env.timezone)
   .option("--json", "print JSON output")
   .option("--markdown", "print Markdown output")
@@ -28,6 +30,7 @@ program
   .option("--debug", "print debug logs")
   .action(async (options: {
     league: string;
+    date?: string;
     timezone: string;
     json?: boolean;
     markdown?: boolean;
@@ -41,6 +44,7 @@ program
 
     try {
       const league = resolveLeague(options.league);
+      const date = options.date ?? todayKey(options.timezone);
       const service = new FootballService({
         provider: new FlashscoreProvider(),
         cache: new FileCache(env.cacheDir),
@@ -50,6 +54,7 @@ program
       const result = await service.getTodayMatches({
         league,
         timezone: options.timezone,
+        date,
         useCache: options.cache !== false
       });
 
@@ -60,6 +65,7 @@ program
       if (options.json) {
         console.log(formatJson({
           leagueName: league.displayName,
+          date,
           timezone: options.timezone,
           matches: result.matches
         }));
@@ -69,6 +75,7 @@ program
       if (options.markdown) {
         console.log(formatMarkdown({
           leagueName: league.displayName,
+          date,
           timezone: options.timezone,
           matches: result.matches
         }));
@@ -77,6 +84,7 @@ program
 
       console.log(formatConsole({
         leagueName: league.displayName,
+        date,
         matches: result.matches
       }));
     } catch (error) {

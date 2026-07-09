@@ -15,6 +15,7 @@ npx playwright install chromium
 
 ```bash
 npm run matches -- --league premier-league
+npm run matches -- --league premier-league --date 2026-08-21
 npm run matches -- --league PL
 npm run matches -- --league la-liga --json
 npm run matches -- --league champions-league --markdown
@@ -27,6 +28,7 @@ The CLI defaults to `Europe/Copenhagen`.
 
 ```bash
 football today --league premier-league
+football today --league premier-league --date 2026-08-21
 football today --league la-liga --json
 football today --league world-cup --markdown
 football today --league premier-league --timezone Europe/Copenhagen --no-cache

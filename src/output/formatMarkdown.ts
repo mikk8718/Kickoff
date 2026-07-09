@@ -1,15 +1,14 @@
 import type { Match } from "../providers/FootballProvider.js";
-import { todayKey } from "../utils/date.js";
-
 export function formatMarkdown(input: {
   leagueName: string;
+  date: string;
   timezone: string;
   matches: Match[];
 }): string {
   return [
-    "# Matches today",
+    "# Matches",
     "",
-    `Date: ${todayKey(input.timezone)}  `,
+    `Date: ${input.date}  `,
     `Timezone: ${input.timezone}  `,
     "Source: Flashscore",
     "",
