@@ -421,7 +421,7 @@ function resolveLimit(options: {
   limit: string;
 }): number {
   if (options.all && options.limit === "20") {
-    return 200;
+    return 500;
   }
 
   return parsePositiveInteger(options.limit, "--limit");

@@ -35,7 +35,7 @@ export function parseFlashscoreRows(input: {
         leagueKey: input.league.key,
         leagueName: input.league.displayName,
         dateLocal: dateTime?.date,
-        kickoffLocal: dateTime?.time ?? cleanText(row.time),
+        kickoffLocal: dateTime?.time ?? (dateTime?.date ? undefined : cleanText(row.time)),
         kickoffTimestampLocal: formatLocalTimestamp(dateTime),
         minute: extractMinute(row.status),
         homeTeam: cleanText(row.home) ?? "Unknown home team",
@@ -65,9 +65,7 @@ export function parseUpcomingFlashscoreRows(input: {
     .filter((result) => result.success)
     .map((result) => result.data)
     .filter((row) => row.home && row.away)
-    .map((row, index) => normalizeFixtureRow({
-      row,
-      index,
+    .map(createRollingFixtureNormalizer({
       league: input.league,
       referenceDate: input.fromDate
     }))
@@ -151,15 +149,16 @@ function normalizeFixtureRow(input: {
   index: number;
   league: LeagueConfig;
   referenceDate: string;
+  yearOverride?: string;
 }): Match {
-  const dateTime = parseFlashscoreDateTime(input.row.time, input.referenceDate);
+  const dateTime = parseFlashscoreDateTime(input.row.time, input.referenceDate, input.yearOverride);
 
   return {
     id: input.row.id ?? `${input.league.key}-${input.index}-${slugify(`${input.row.home}-${input.row.away}-${input.row.time ?? ""}`)}`,
     leagueKey: input.league.key,
     leagueName: input.league.displayName,
     dateLocal: dateTime?.date,
-    kickoffLocal: dateTime?.time ?? cleanText(input.row.time),
+    kickoffLocal: dateTime?.time ?? (dateTime?.date ? undefined : cleanText(input.row.time)),
     kickoffTimestampLocal: formatLocalTimestamp(dateTime),
     minute: extractMinute(input.row.status),
     homeTeam: cleanText(input.row.home) ?? "Unknown home team",
@@ -169,6 +168,34 @@ function normalizeFixtureRow(input: {
     status: normalizeStatus(input.row.status),
     source: "flashscore",
     sourceUrl: input.league.flashscoreUrl
+  };
+}
+
+function createRollingFixtureNormalizer(input: {
+  league: LeagueConfig;
+  referenceDate: string;
+}): (row: RawFlashscoreRow, index: number) => Match {
+  let currentYear = Number(input.referenceDate.slice(0, 4));
+  let previousMonthDay: number | undefined;
+
+  return (row, index) => {
+    const monthDay = extractFlashscoreMonthDay(row.time);
+
+    if (monthDay !== undefined) {
+      if (previousMonthDay !== undefined && monthDay < previousMonthDay) {
+        currentYear += 1;
+      }
+
+      previousMonthDay = monthDay;
+    }
+
+    return normalizeFixtureRow({
+      row,
+      index,
+      league: input.league,
+      referenceDate: input.referenceDate,
+      yearOverride: String(currentYear)
+    });
   };
 }
 
@@ -256,7 +283,7 @@ function normalizeCompetitionText(value?: string): string {
     .trim() ?? "";
 }
 
-export function parseFlashscoreDateTime(value?: string, targetDate?: string): {
+export function parseFlashscoreDateTime(value?: string, targetDate?: string, yearOverride?: string): {
   date?: string;
   time?: string;
 } | undefined {
@@ -270,7 +297,18 @@ export function parseFlashscoreDateTime(value?: string, targetDate?: string): {
 
   if (datedMatch) {
     const [, day, month, time] = datedMatch;
-    const year = targetDate?.slice(0, 4) ?? String(new Date().getFullYear());
+    const year = yearOverride ?? targetDate?.slice(0, 4) ?? String(new Date().getFullYear());
+
+    return {
+      date: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+      time
+    };
+  }
+
+  const datedWithYearMatch = cleaned.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}:\d{2}))?$/);
+
+  if (datedWithYearMatch) {
+    const [, day, month, year, time] = datedWithYearMatch;
 
     return {
       date: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
@@ -288,6 +326,18 @@ export function parseFlashscoreDateTime(value?: string, targetDate?: string): {
   }
 
   return undefined;
+}
+
+function extractFlashscoreMonthDay(value?: string): number | undefined {
+  const cleaned = cleanText(value);
+  const datedMatch = cleaned?.match(/^(\d{1,2})\.(\d{1,2})\.(?:\d{4})?(?:\s+\d{1,2}:\d{2})?$/);
+
+  if (!datedMatch) {
+    return undefined;
+  }
+
+  const [, day, month] = datedMatch;
+  return Number(month) * 100 + Number(day);
 }
 
 function slugify(value: string): string {

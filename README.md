@@ -32,6 +32,8 @@ npm run live -- --league world-cup
 npm run live -- --json
 ```
 
+Use `--show-more <clicks>` when you want to control how many times Flashscore's fixture page is expanded. Use `--all` for a bounded full-season scrape; it loads more fixture rows and raises the default result limit to `500`.
+
 Fixture output includes a local date/time per match:
 
 ```text

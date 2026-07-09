@@ -15,6 +15,13 @@ describe("FlashscorePageParser", () => {
     });
   });
 
+  it("parses Flashscore fixture dates that include an explicit year", () => {
+    expect(parseFlashscoreDateTime("30.05.2027", "2026-07-10")).toEqual({
+      date: "2027-05-30",
+      time: undefined
+    });
+  });
+
   it("filters rows to the requested date", () => {
     expect(parseFlashscoreRows({
       league: leagues["premier-league"],
@@ -76,6 +83,40 @@ describe("FlashscorePageParser", () => {
         kickoffTimestampLocal: "2026-07-11 21:00",
         homeTeam: "Brazil",
         awayTeam: "Argentina"
+      })
+    ]);
+  });
+
+  it("keeps next-year season rows when parsing upcoming fixtures", () => {
+    expect(parseUpcomingFlashscoreRows({
+      league: leagues["premier-league"],
+      fromDate: "2026-07-10",
+      limit: 10,
+      rows: [
+        {
+          time: "20.12. 16:00",
+          home: "Chelsea",
+          away: "Arsenal"
+        },
+        {
+          time: "17.05.2027",
+          home: "Arsenal",
+          away: "Tottenham"
+        }
+      ]
+    })).toEqual([
+      expect.objectContaining({
+        dateLocal: "2026-12-20",
+        kickoffTimestampLocal: "2026-12-20 16:00",
+        homeTeam: "Chelsea",
+        awayTeam: "Arsenal"
+      }),
+      expect.objectContaining({
+        dateLocal: "2027-05-17",
+        kickoffLocal: undefined,
+        kickoffTimestampLocal: undefined,
+        homeTeam: "Arsenal",
+        awayTeam: "Tottenham"
       })
     ]);
   });

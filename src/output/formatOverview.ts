@@ -67,7 +67,7 @@ function formatMatchLine(match: Match): string {
   const score = match.homeScore !== undefined && match.awayScore !== undefined
     ? `${match.homeScore}-${match.awayScore}`
     : "vs";
-  const timeOrMinute = match.minute ?? match.kickoffTimestampLocal ?? match.kickoffLocal ?? "--:--";
+  const timeOrMinute = match.minute ?? match.kickoffTimestampLocal ?? match.kickoffLocal ?? match.dateLocal ?? "--:--";
 
   return `${timeOrMinute} ${match.homeTeam} ${score} ${match.awayTeam}`;
 }
