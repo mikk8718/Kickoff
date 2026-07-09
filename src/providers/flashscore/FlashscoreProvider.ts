@@ -77,6 +77,7 @@ export class FlashscoreProvider implements FootballProvider {
     fromDate: string;
     days?: number;
     limit: number;
+    showMoreClicks: number;
   }) {
     let browser: Browser | undefined;
 
@@ -107,6 +108,8 @@ export class FlashscoreProvider implements FootballProvider {
       if (!hasRows) {
         return [];
       }
+
+      await clickShowMoreMatches(page, input.showMoreClicks);
 
       const rows = await page.$$eval(flashscoreSelectors.matchRow, (elements, selectors) => {
         return elements.map((row) => ({
@@ -199,6 +202,34 @@ export class FlashscoreProvider implements FootballProvider {
       });
     } finally {
       await browser.close();
+    }
+  }
+}
+
+async function clickShowMoreMatches(page: import("playwright").Page, clicks: number): Promise<void> {
+  for (let index = 0; index < clicks; index += 1) {
+    const button = page.getByRole("button", { name: /show more matches/i });
+
+    if (await button.count() === 0 || !(await button.first().isVisible())) {
+      return;
+    }
+
+    const rowCountBefore = await page.locator(flashscoreSelectors.matchRow).count();
+    await button.first().click();
+
+    try {
+      await page.waitForFunction(
+        ({ selector, expectedCount }) => document.querySelectorAll(selector).length > expectedCount,
+        {
+          selector: flashscoreSelectors.matchRow,
+          expectedCount: rowCountBefore
+        },
+        {
+          timeout: 10_000
+        }
+      );
+    } catch {
+      return;
     }
   }
 }

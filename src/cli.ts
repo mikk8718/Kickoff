@@ -112,6 +112,8 @@ program
   .option("-f, --from <date>", "start date in YYYY-MM-DD format")
   .option("--days <days>", "only show fixtures within this many days")
   .option("--limit <limit>", "maximum number of matches to print", "20")
+  .option("--show-more <clicks>", "click Flashscore's Show more matches button this many times", "0")
+  .option("--all", "load more fixture rows with a bounded default")
   .option("-t, --timezone <timezone>", "IANA timezone", env.timezone)
   .option("--json", "print JSON output")
   .option("--markdown", "print Markdown output")
@@ -122,6 +124,8 @@ program
     from?: string;
     days?: string;
     limit: string;
+    showMore: string;
+    all?: boolean;
     timezone: string;
     json?: boolean;
     markdown?: boolean;
@@ -137,7 +141,8 @@ program
       const league = resolveLeague(options.league);
       const fromDate = options.from ?? todayKey(options.timezone);
       const days = parseOptionalPositiveInteger(options.days, "--days");
-      const limit = parsePositiveInteger(options.limit, "--limit");
+      const showMoreClicks = resolveShowMoreClicks(options);
+      const limit = resolveLimit(options);
 
       if (!isDateKey(fromDate)) {
         throw new Error(`Invalid --from date: "${fromDate}". Use YYYY-MM-DD.`);
@@ -155,6 +160,7 @@ program
         fromDate,
         days,
         limit,
+        showMoreClicks,
         useCache: options.cache !== false
       });
 
@@ -209,6 +215,8 @@ program
   .option("-f, --from <date>", "upcoming fixture start date in YYYY-MM-DD format")
   .option("--days <days>", "only show upcoming fixtures within this many days")
   .option("--limit <limit>", "maximum number of upcoming matches to print", "20")
+  .option("--show-more <clicks>", "click Flashscore's Show more matches button this many times", "0")
+  .option("--all", "load more upcoming fixture rows with a bounded default")
   .option("-t, --timezone <timezone>", "IANA timezone", env.timezone)
   .option("--json", "print JSON output")
   .option("--markdown", "print Markdown output")
@@ -219,6 +227,8 @@ program
     from?: string;
     days?: string;
     limit: string;
+    showMore: string;
+    all?: boolean;
     timezone: string;
     json?: boolean;
     markdown?: boolean;
@@ -235,7 +245,8 @@ program
       const date = todayKey(options.timezone);
       const fromDate = options.from ?? date;
       const days = parseOptionalPositiveInteger(options.days, "--days");
-      const limit = parsePositiveInteger(options.limit, "--limit");
+      const showMoreClicks = resolveShowMoreClicks(options);
+      const limit = resolveLimit(options);
 
       if (!isDateKey(fromDate)) {
         throw new Error(`Invalid --from date: "${fromDate}". Use YYYY-MM-DD.`);
@@ -259,6 +270,7 @@ program
           fromDate,
           days,
           limit,
+          showMoreClicks,
           useCache: options.cache !== false
         })
       ]);
@@ -386,6 +398,40 @@ function parsePositiveInteger(value: string, flag: string): number {
 
   if (!Number.isInteger(parsed) || parsed < 1) {
     throw new Error(`Invalid ${flag}: "${value}". Use a positive integer.`);
+  }
+
+  return parsed;
+}
+
+function resolveShowMoreClicks(options: {
+  all?: boolean;
+  showMore: string;
+}): number {
+  const explicitClicks = parseNonNegativeInteger(options.showMore, "--show-more");
+
+  if (options.all) {
+    return Math.max(explicitClicks, 10);
+  }
+
+  return explicitClicks;
+}
+
+function resolveLimit(options: {
+  all?: boolean;
+  limit: string;
+}): number {
+  if (options.all && options.limit === "20") {
+    return 200;
+  }
+
+  return parsePositiveInteger(options.limit, "--limit");
+}
+
+function parseNonNegativeInteger(value: string, flag: string): number {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`Invalid ${flag}: "${value}". Use a non-negative integer.`);
   }
 
   return parsed;

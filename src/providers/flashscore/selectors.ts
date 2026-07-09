@@ -6,5 +6,6 @@ export const flashscoreSelectors = {
   awayTeam: ".event__awayParticipant",
   homeScore: ".event__score--home",
   awayScore: ".event__score--away",
-  status: ".event__stage"
+  status: ".event__stage",
+  showMoreButton: "button:has-text('Show more matches')"
 } as const;

@@ -116,10 +116,11 @@ export class FootballService {
     fromDate: string;
     days?: number;
     limit: number;
+    showMoreClicks: number;
     useCache: boolean;
   }): Promise<{ matches: Match[]; usedCache: boolean }> {
     const rangeKey = input.days === undefined ? "all-visible" : `${input.days}-days`;
-    const cacheKey = `flashscore-upcoming-${input.league.key}-${input.fromDate}-${rangeKey}-${input.limit}-${input.timezone}`;
+    const cacheKey = `flashscore-upcoming-${input.league.key}-${input.fromDate}-${rangeKey}-${input.limit}-more-${input.showMoreClicks}-${input.timezone}`;
 
     if (input.useCache) {
       const cached = await this.cache.get<Match[]>(cacheKey, this.cacheTtlSeconds);
@@ -138,7 +139,8 @@ export class FootballService {
         timezone: input.timezone,
         fromDate: input.fromDate,
         days: input.days,
-        limit: input.limit
+        limit: input.limit,
+        showMoreClicks: input.showMoreClicks
       });
 
       await this.cache.set(cacheKey, matches);

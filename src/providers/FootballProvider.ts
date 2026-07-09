@@ -40,6 +40,7 @@ export interface FootballProvider {
     fromDate: string;
     days?: number;
     limit: number;
+    showMoreClicks: number;
   }): Promise<Match[]>;
 
   getLiveMatches(input: {
